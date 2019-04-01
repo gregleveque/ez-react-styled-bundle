@@ -1,0 +1,29 @@
+
+{
+  "name": "gregleveque/ez-react-styled-bundle",
+  "description": "Display images like Medium with a low resolution placeholder.",
+  "type": "ezplatform-bundle",
+  "keywords": [
+    "ezplatform",
+    "ezpublish",
+    "react",
+    "styled-components",
+    "webpack-encore"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Grégory LÉVÊQUE",
+      "email": "gregory.leveque.gie@gmail.com"
+    }
+  ],
+  "require": {
+    "ezsystems/ezpublish-kernel": "^7.5",
+    "limenius/react-bundle": "^2.3.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Gie\\EzReactStyledBundle\\": ""
+    }
+  }
+}
