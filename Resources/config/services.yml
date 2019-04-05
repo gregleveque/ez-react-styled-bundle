@@ -14,9 +14,8 @@ services:
 
     Gie\EzReactStyledBundle\Command\GenerateWebpackFilesCommand:
         arguments:
-            - '@templating.engine.twig'
-            - "%ez_react_styled%"
-            - '%kernel.project_dir%'
+            $config: "%ez_react_styled%"
+            $projectDir: '%kernel.project_dir%'
         tags:
             -  { name: console.command }
 

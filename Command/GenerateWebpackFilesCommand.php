@@ -8,6 +8,7 @@ namespace Gie\EzReactStyledBundle\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Bundle\TwigBundle\TwigEngine;
@@ -36,17 +37,30 @@ class GenerateWebpackFilesCommand extends Command
     protected $projectDir;
 
     /**
-     * FileGenerator constructor.
+     * @var Filesystem
+     */
+    protected $filesystem;
+
+    /**
+     * @var Finder
+     */
+    protected $finder;
+
+    /**
+     * GenerateWebpackFilesCommand constructor.
      * @param TwigEngine $templating
+     * @param Filesystem $filesystem
      * @param array $config
-     * @param $projectDir
+     * @param string $projectDir
      */
     public function __construct(
         TwigEngine $templating,
+        Filesystem $filesystem,
         array $config,
         string $projectDir
     ) {
         $this->templating = $templating;
+        $this->filesystem = $filesystem;
         $this->config = $config;
         $this->projectDir = $projectDir;
 
@@ -77,23 +91,23 @@ class GenerateWebpackFilesCommand extends Command
     /**
      * @throws TwigError
      */
-    public function createReactOnRailsEntryPoints(): void
+    private function createReactOnRailsEntryPoints(): void
     {
-        $filesystem = new Filesystem();
         $railsComponentsPath = $this->config['export_dir'] . $this->config['rails_components_dir'] . '/';
 
-        $filesystem->remove($railsComponentsPath);
+        $this->filesystem->remove($railsComponentsPath);
 
         foreach ($this->config['components'] as $name => $path) {
+            $realPath = $this->getComponentPath($name, $path);
             $content = $this->templating->render(
                 '@EzReactStyled/react-on-rails.register.js.twig',
                 [
                     'componentName' => $name,
-                    'componentPath' => realpath($this->projectDir . '/' . $path)
+                    'componentPath' => $realPath
                 ]
             );
 
-            $filesystem->dumpFile($railsComponentsPath . $name . '.js', $content);
+            $this->filesystem->dumpFile($railsComponentsPath . $name . '.js', $content);
             $this->output->writeln("Component '$name' registered.");
         }
     }
@@ -101,7 +115,7 @@ class GenerateWebpackFilesCommand extends Command
     /**
      * @throws TwigError
      */
-    public function createWebpackConfigs(): void
+    private function createWebpackConfigs(): void
     {
         if ($this->config['auto_webpack_config']) {
             foreach (['client', 'server'] as $side) {
@@ -110,7 +124,6 @@ class GenerateWebpackFilesCommand extends Command
         } else {
             $this->output->writeln("[auto_webpack_config] option disabled. SKIP.");
         }
-
     }
 
     /**
@@ -145,9 +158,29 @@ class GenerateWebpackFilesCommand extends Command
 
             ]
         );
-        $filesystem = new Filesystem();
-        $filesystem->dumpFile($webpackConfigPath . 'webpack.config.' . $side . '.js', $content);
 
+        $this->filesystem->dumpFile($webpackConfigPath . 'webpack.config.' . $side . '.js', $content);
         $this->output->writeln("[$side] config exported.");
+    }
+
+    /**
+     * @param $name
+     * @param $path
+     * @return bool|string
+     */
+    private function getComponentPath($name, $path)
+    {
+        if (preg_match('/^[^.\/]/', $path)
+            && $this->filesystem->exists($this->projectDir . '/node_modules/' . $path)) {
+            return $path;
+        } else {
+            $realPath = realpath($this->projectDir . '/' . $path);
+
+            if ($realPath === false) {
+                throw new FileNotFoundException("Component '$name' does not exist in '$path' with root_dir: '$this->projectDir'.");
+            }
+
+            return $realPath;
+        }
     }
 }
