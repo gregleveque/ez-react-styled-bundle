@@ -1,0 +1,24 @@
+{% autoescape false %}
+import React from 'react'
+import ReactOnRails from 'react-on-rails'
+import { renderToString } from 'react-dom/server'
+import { ServerStyleSheet, StyleSheetManager } from 'styled-components'
+import Component from '{{ componentPath }}'
+
+ReactOnRails.register({
+  '{{ componentName }}': (props, context) => {
+    if (context.serverSide) {
+      const sheet = new ServerStyleSheet()
+      const componentHtml = renderToString(
+        <StyleSheetManager sheet={sheet.instance}>
+          <Component {...props} context={context} />
+        </StyleSheetManager>
+      )
+      const styles = sheet.getStyleTags()
+      return { renderedHtml: { componentHtml, styles } }
+    }
+    return <Component {...props} context={context} />
+  }
+})
+{% endautoescape %}
+

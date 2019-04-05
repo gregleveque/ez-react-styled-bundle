@@ -1,0 +1,30 @@
+{% autoescape false %}
+const Encore = require('@symfony/webpack-encore')
+
+Encore.reset()
+Encore
+  .setOutputPath('web/assets/{{ entryPointName }}')
+  .setPublicPath('/assets/{{ entryPointName }}')
+  .cleanupOutputBeforeBuild()
+  {% for entryName, entryPath in entryPoints %}
+    .addEntry('{{ entryName }}', ['{{ entryPath }}'])
+  {% endfor %}
+  .enableReactPreset()
+  .splitEntryChunks()
+  .enableSingleRuntimeChunk()
+  .enableVersioning(Encore.isProduction())
+  .configureTerserPlugin(options => {
+    options.cache = true
+    options.parallel = true
+    options.terserOptions = {
+      output: {
+        ecma: 6
+      }
+    }
+  })
+
+const webpackConfig = Encore.getWebpackConfig()
+webpackConfig.name = '{{ entryPointName }}'
+
+module.exports = webpackConfig
+{% endautoescape %}

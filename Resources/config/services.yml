@@ -1,4 +1,31 @@
 parameters:
-
+    ez_react_styled:
+        rails_components_dir: '/components'
+        webpack_config_dir: '/configs'
+        server_bundle_dir: '/server'
+        server_bundle_name: 'server-bundle'
+        entry_point_name: 'ez_react_styled'
 
 services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Gie\EzReactStyledBundle\Command\GenerateWebpackFilesCommand:
+        arguments:
+            - '@templating.engine.twig'
+            - "%ez_react_styled%"
+            - '%kernel.project_dir%'
+        tags:
+            -  { name: console.command }
+
+    Gie\EzReactStyledBundle\Twig\ReactStyledExtension:
+        autowire: false
+        autoconfigure: false
+        public: false
+        parent: 'limenius_react.render_extension'
+        calls:
+            - [setConfig, ['@webpack_encore.tag_renderer']]
+        tags:
+            - { name: twig.extension }

@@ -1,0 +1,18 @@
+{% autoescape false %}
+const Encore = require('@symfony/webpack-encore')
+
+Encore.reset()
+Encore
+  .setOutputPath('{{ serverBundleDir|raw }}')
+  .setPublicPath('/')
+  .cleanupOutputBeforeBuild()
+  .addEntry('{{ serverBundleName }}', [
+    {% for entryPath in entryPoints %}
+      '{{ entryPath }}',
+    {% endfor %}
+  ])
+  .enableReactPreset()
+  .disableSingleRuntimeChunk();
+
+module.exports = Encore.getWebpackConfig()
+{% endautoescape %}

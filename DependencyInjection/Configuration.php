@@ -19,10 +19,32 @@ class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('ez_react_styled');
-
-        // Here you should define the parameters that are allowed to
-        // configure your bundle. See the documentation linked above for
-        // more information on that topic.
+        $rootNode
+            ->children()
+                ->booleanNode('auto_webpack_config')
+                    ->info('Set to false to disable webpack.config.js auto generation.')
+                    ->defaultTrue()
+                ->end()
+                ->enumNode('default_rendering')
+                    ->values(['server_side', 'client_side', 'both'])
+                    ->defaultValue('both')
+                ->end()
+                ->arrayNode('server_side')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('fail_loud')
+                            ->defaultFalse()
+                        ->end()
+                        ->booleanNode('trace')
+                            ->defaultFalse()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('components')
+                    ->info('Format: "EntryName: EntryFile (relative to %kernel.project_dir%)".')
+                    ->scalarPrototype()->end()
+                ->end()
+            ->end();
 
         return $treeBuilder;
     }
