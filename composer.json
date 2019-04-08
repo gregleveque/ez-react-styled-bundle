@@ -7,6 +7,7 @@
     "ezplatform",
     "ezpublish",
     "react",
+    "ssr",
     "styled-components",
     "webpack-encore"
   ],
