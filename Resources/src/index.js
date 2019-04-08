@@ -5,6 +5,6 @@ import styled from 'styled-components'
 const Wrapper = styled.div`
   background-color: red;
 `
-const App = () => <Wrapper>My first component</Wrapper>
+const App = ({test}) => <Wrapper>My first component: {test}</Wrapper>
 
 export default App

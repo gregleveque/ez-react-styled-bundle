@@ -30,6 +30,7 @@ class EzReactStyledExtension extends Extension
         $parameters = $container->getParameter('ez_react_styled');
         $parameters += [
             'auto_webpack_config' => $config['auto_webpack_config'],
+            'deferred_json_props' => $config['deferred_json_props'],
             'components' => $config['components'],
             'export_dir' => $rootDir . '/Resources/webpack'
         ];

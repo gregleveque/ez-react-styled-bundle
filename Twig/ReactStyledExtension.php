@@ -27,7 +27,12 @@ class ReactStyledExtension extends ReactRenderExtension
     /**
      * @var TagRenderer
      */
-    protected $lookup;
+    protected $tagRenderer;
+
+    /**
+     * @var array
+     */
+    protected $config;
 
     /**
      * Ajout de la fonction react_assets qui permet de gérer automatiquement l'import de scripts dans pied de page
@@ -43,47 +48,50 @@ class ReactStyledExtension extends ReactRenderExtension
     }
 
     /**
-     *  Import de la config Webpack et de l'emplacement du manifest en mode production
-     * @param $bundle_path
-     * @param $webpack
+     * @param TagRenderer $tagRenderer
      */
-    public function setConfig(TagRenderer $encoreLookup){
-
-        $this->lookup = $encoreLookup;
+    public function setTagRenderer(TagRenderer $tagRenderer)
+    {
+        $this->tagRenderer = $tagRenderer;
     }
 
-
+    /**
+     * @param array $config
+     */
+    public function setConfig(array $config)
+    {
+        $this->config = $config;
+    }
 
     /**
      * @param string $componentName
      * @param array $options
+     * @param bool $bufferData
      * @return string
      */
-    public function reactRenderComponent($componentName, array $options = [], $bufferData = false)
+    public function reactRenderComponent($componentName, array $options = [], $bufferData = null)
     {
+        $bufferData = $bufferData ?? $this->config['deferred_json_props'];
         return $this->reactRenderComponentArray($componentName, $options, $bufferData);
     }
 
     /**
      * @param string $componentName
      * @param array $options
+     * @param bool $bufferData
      * @return string
      */
-    public function reactRenderComponentArray($componentName, array $options = [], $bufferData = false)
+    public function reactRenderComponentArray($componentName, array $options = [], $bufferData = null)
     {
-
+        $bufferData = $bufferData ?? $this->config['deferred_json_props'];
 
         if ($this->shouldRenderClientSide($options) && !$this->hasComponent($componentName)) {
             // On stocke dans un tableau le nom du composant associé à son chemin
             $this->components[] = $componentName;
         }
 
-
-        /**
-         * @var $rendered array
-         */
+        /** @var $rendered array */
         $rendered = parent::reactRenderComponentArray($componentName, $options, $bufferData);
-
 
         if (isset($rendered['styles']) && !$this->hasStyle($rendered['styles'])) {
             $this->styles[] = $rendered['styles'];
@@ -108,55 +116,14 @@ class ReactStyledExtension extends ReactRenderExtension
         $content = ob_get_clean();
         $scripts = '';
         foreach ($this->components as $component) {
-           $scripts .= $this->lookup->renderWebpackScriptTags($component, null, 'ez_react_styled');
+           $scripts .= $this->tagRenderer->renderWebpackScriptTags(
+               $component,
+               null,
+               $this->config['entry_point_name']
+           );
         }
 
-        return join($this->styles). $content . $scripts;
-    }
-
-    /**
-     * Config Webpack : [
-     *      'bundle1' => [ 'composant1', 'composant2']
-     *      'bundle2' => [ 'coposant3', 'composant4']
-     * ]
-     *
-     * On parcours les bundles definis dans la config
-     * On met le path du composant faisant parti du bundle et dans la page
-     * Si on a match autant de composant que le bundle on l'inclus et on supprime les composant orphelins
-     *
-     */
-    private function reduceHtmlOutput()
-    {
-        $entry = $this->flatten($this->webpack['addEntry']);
-
-        if (count($entry) <= 1) return;
-
-        foreach($entry as $bundle => $components) {
-            $match = array_reduce($components, function ($bundles, $component) {
-                if (in_array($component, $this->components)) {
-                    $bundles[] = $component;
-                }
-                return $bundles;
-            }, []);
-
-            if (count($match) == count($components)) {
-                $this->components = array_diff($this->components, $match);
-                $this->components[] = $bundle;
-            }
-        }
-    }
-
-    /**
-     * @param $array
-     * @return mixed
-     */
-    private function flatten($array)
-    {
-        return array_reduce(
-            $array,
-            function ($acc, $value) {
-                return $acc[] = $value;
-            }, []);
+        return join($this->styles) . $content . $this->reactFlushBuffer() . $scripts;
     }
 
     /**
@@ -176,14 +143,5 @@ class ReactStyledExtension extends ReactRenderExtension
     {
         return in_array($style, $this->styles)
             || $style === '<style data-styled-components=""></style>';
-    }
-
-    /**
-     * @param $component
-     * @return string
-     */
-    private function generateTag($component) {
-        $file = $this->webpack['setManifestKeyPrefix'].$component.'.js';
-        return '<script src="'.$this->manifest[$file].'"></script>';
     }
 }

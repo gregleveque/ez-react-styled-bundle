@@ -7,12 +7,9 @@ parameters:
         entry_point_name: 'ez_react_styled'
 
 services:
-    _defaults:
-        autowire: true
-        autoconfigure: true
-        public: false
 
     Gie\EzReactStyledBundle\Command\GenerateWebpackFilesCommand:
+        autowire: true
         arguments:
             $config: "%ez_react_styled%"
             $projectDir: '%kernel.project_dir%'
@@ -20,11 +17,9 @@ services:
             -  { name: console.command }
 
     Gie\EzReactStyledBundle\Twig\ReactStyledExtension:
-        autowire: false
-        autoconfigure: false
-        public: false
         parent: 'limenius_react.render_extension'
         calls:
-            - [setConfig, ['@webpack_encore.tag_renderer']]
+            - [setTagRenderer, ['@webpack_encore.tag_renderer']]
+            - [setConfig, ['%ez_react_styled%']]
         tags:
             - { name: twig.extension }
